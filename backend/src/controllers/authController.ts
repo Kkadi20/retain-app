@@ -8,9 +8,9 @@ export const register = async (req: Request, res: Response) => {
     const JWT_SECRET = process.env.JWT_SECRET as string;
     const { username, email, password } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
-      return res.status(400).json({ message: "Email already registered" });
+      return res.status(400).json({ message: "Email or username already in use" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -62,8 +62,8 @@ export const login = async (req: Request, res: Response) => {
       token,
       user: { id: user._id, username: user.username, email: user.email, role: user.role },
     });
- } catch (error) {
-  console.error("Auth error:", error);
-  res.status(500).json({ message: "Server error", error: error instanceof Error ? error.message : "Unknown error" });
-}
+  } catch (error) {
+    console.error("Auth error:", error);
+    res.status(500).json({ message: "Server error", error: error instanceof Error ? error.message : "Unknown error" });
+  }
 };
