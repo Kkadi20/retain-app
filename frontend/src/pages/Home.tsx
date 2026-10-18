@@ -1,11 +1,3 @@
-// ============================================
-// IMPORTS
-// Redux: for reading/updating filter state (search, category, sort, etc.)
-// React: hooks for local component state and side effects
-// Context: for the logged-in user and logout function
-// api: pre-configured axios instance that auto-attaches the JWT token
-// types: shared TypeScript shape for an Expense object
-// ============================================
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../store/store";
 import {
@@ -22,20 +14,16 @@ import type { Expense } from "../types";
 const Home = () => {
   // --------------------------------------------
   // AUTH
-  // Comes from AuthContext — the logged-in user's info and a logout function.
   // --------------------------------------------
   const { user, logout } = useAuth();
 
   // --------------------------------------------
   // EXPENSE LIST STATE
-  // Holds the actual array of expenses fetched from the backend.
   // --------------------------------------------
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
   // --------------------------------------------
   // EXPENSE FORM STATE
-  // One useState per form field. "editingId" tracks whether the form
-  // is in "add new" mode (null) or "editing an existing expense" mode (has an id).
   // --------------------------------------------
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -46,19 +34,12 @@ const Home = () => {
 
   // --------------------------------------------
   // REDUX — FILTERS
-  // "filters" reads the current filter/sort values from the Redux store.
-  // "dispatch" is how we send an action to Redux to update those values.
-  // Any NEW filter-related state should be read here, not with useState.
   // --------------------------------------------
   const filters = useSelector((state: RootState) => state.filters);
   const dispatch = useDispatch();
 
   // --------------------------------------------
   // BUDGET STATE
-  // "budgetAmount" = the input field, before it's saved.
-  // "budget" = the actual saved budget amount, fetched from the backend.
-  // "currentMonth" = today's year-month string, e.g. "2026-10",
-  // used to match the backend's expected format for budgets/expenses.
   // --------------------------------------------
   const [budgetAmount, setBudgetAmount] = useState("");
   const [budget, setBudgetValue] = useState<number>(0);
@@ -66,8 +47,6 @@ const Home = () => {
 
   // ==============================================
   // DATA FETCHING FUNCTIONS
-  // These call the backend API. Any NEW fetch-from-backend
-  // logic belongs in a function like this, not directly in the JSX.
   // ==============================================
   const fetchExpenses = async () => {
     const res = await api.get("/expenses");
@@ -79,7 +58,6 @@ const Home = () => {
     setBudgetValue(res.data.amount || 0);
   };
 
-  // Runs once when the page first loads — fetches both expenses and budget.
   useEffect(() => {
     fetchExpenses();
     fetchBudget();
@@ -88,8 +66,6 @@ const Home = () => {
   // ==============================================
   // EXPENSE FORM HANDLERS
   // ==============================================
-
-  // Clears the form and exits "edit mode"
   const resetForm = () => {
     setTitle("");
     setAmount("");
@@ -99,9 +75,6 @@ const Home = () => {
     setEditingId(null);
   };
 
-  // Runs when the expense form is submitted.
-  // If editingId is set, it updates that expense (PUT).
-  // Otherwise, it creates a brand new one (POST).
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { title, amount: Number(amount), category, date, paymentMethod };
@@ -115,7 +88,6 @@ const Home = () => {
     fetchExpenses();
   };
 
-  // Pre-fills the form with an existing expense's data, for editing.
   const handleEdit = (exp: Expense) => {
     setEditingId(exp._id);
     setTitle(exp.title);
@@ -142,11 +114,7 @@ const Home = () => {
 
   // ==============================================
   // DERIVED / COMPUTED VALUES
-  // These are NOT stored in state — they're calculated fresh from
-  // existing state every time the component renders.
   // ==============================================
-
-  // Applies search, category, and payment method filters, then sorts.
   const filteredExpenses = expenses
     .filter((exp) => {
       const matchesSearch = exp.title?.toLowerCase().includes(filters.search.toLowerCase()) ?? true;
@@ -166,7 +134,6 @@ const Home = () => {
       return filters.sortOrder === "asc" ? field : -field;
     });
 
-  // This month's expenses only — used for budget + dashboard stats.
   const thisMonthExpenses = useMemo(
     () => expenses.filter((exp) => exp.date.startsWith(currentMonth)),
     [expenses, currentMonth]
@@ -179,9 +146,6 @@ const Home = () => {
 
   const remainingBudget = budget - totalSpent;
 
-  // Budget status — order matters, each check only runs if the one
-  // above it was false. Handles the "exactly equal to budget" edge case
-  // explicitly, so it doesn't wrongly fall into "Approaching."
   const budgetStatus =
     budget === 0
       ? "No budget set"
@@ -193,7 +157,6 @@ const Home = () => {
             ? "Approaching budget"
             : "Within budget";
 
-  // Dashboard stats: highest expense, spend-by-category, 5 most recent.
   const highestExpense = useMemo(() => {
     if (thisMonthExpenses.length === 0) return null;
     return thisMonthExpenses.reduce((max, exp) => (exp.amount > max.amount ? exp : max));
@@ -213,12 +176,13 @@ const Home = () => {
       .slice(0, 5);
   }, [expenses]);
 
+  // Progress bar fill %, capped at 100 so it never overflows visually.
+  const budgetPercent = budget > 0 ? Math.min((totalSpent / budget) * 100, 100) : 0;
+  const progressClass =
+    budgetStatus === "Over budget" ? "over-budget" : budgetStatus === "Approaching budget" ? "approaching" : "";
+
   // ==============================================
   // RENDER (JSX)
-  // Each section is wrapped in a "card" div — this is what gives
-  // the page its card-based look (white rounded box + shadow),
-  // matching the design inspiration. "page-wrapper" just centers
-  // everything and adds side padding.
   // ==============================================
   return (
     <div className="page-wrapper">
@@ -229,7 +193,7 @@ const Home = () => {
         {user?.role === "admin" && <a href="/admin">Admin Dashboard</a>}
       </div>
 
-      {/* --- Budget section --- */}
+      {/* --- Budget section — stat grid + progress bar --- */}
       <div className="card">
         <h2>Monthly Budget</h2>
         <form onSubmit={handleSetBudget}>
@@ -240,21 +204,51 @@ const Home = () => {
           />
           <button type="submit">Set Budget</button>
         </form>
-        <p>Budget: ${budget}</p>
-        <p>Spent this month: ${totalSpent}</p>
-        <p>Remaining: ${remainingBudget}</p>
-        <p>Status: {budgetStatus}</p>
+
+        <div className="stats-grid">
+          <div className="stat-box">
+            <p className="stat-label">Budget</p>
+            <p className="stat-value">${budget}</p>
+          </div>
+          <div className="stat-box">
+            <p className="stat-label">Spent</p>
+            <p className="stat-value">${totalSpent}</p>
+          </div>
+          <div className="stat-box">
+            <p className="stat-label">Remaining</p>
+            <p className="stat-value">${remainingBudget}</p>
+          </div>
+          <div className="stat-box">
+            <p className="stat-label">Status</p>
+            <p className="stat-value">{budgetStatus}</p>
+          </div>
+        </div>
+
+        <div className="progress-track">
+          <div className={`progress-fill ${progressClass}`} style={{ width: `${budgetPercent}%` }} />
+        </div>
       </div>
 
-      {/* --- User dashboard --- */}
+      {/* --- User dashboard — stat grid for top numbers, lists below --- */}
       <div className="card">
         <h2>Dashboard</h2>
-        <p>Total spending this month: ${totalSpent}</p>
-        <p>Remaining budget: ${remainingBudget}</p>
-        <p>
-          Highest expense:{" "}
-          {highestExpense ? `${highestExpense.title} - $${highestExpense.amount}` : "None"}
-        </p>
+
+        <div className="stats-grid">
+          <div className="stat-box">
+            <p className="stat-label">Spending This Month</p>
+            <p className="stat-value">${totalSpent}</p>
+          </div>
+          <div className="stat-box">
+            <p className="stat-label">Remaining Budget</p>
+            <p className="stat-value">${remainingBudget}</p>
+          </div>
+          <div className="stat-box">
+            <p className="stat-label">Highest Expense</p>
+            <p className="stat-value">
+              {highestExpense ? `${highestExpense.title} ($${highestExpense.amount})` : "None"}
+            </p>
+          </div>
+        </div>
 
         <h3>Spending by Category</h3>
         <ul>

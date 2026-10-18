@@ -136,3 +136,79 @@ li {
   padding: 6px 12px;
   font-size: 13px;
 }
+
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-card {
+  max-width: 380px;
+  width: 100%;
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-card input {
+  width: 100%;
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.stat-box {
+  background: var(--purple-light);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-gray);
+  margin: 0 0 6px 0;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.progress-track {
+  width: 100%;
+  height: 10px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--purple);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.progress-fill.over-budget {
+  background: #dc2626;
+}
+
+.progress-fill.approaching {
+  background: #f59e0b;
+}
