@@ -176,7 +176,7 @@ const Home = () => {
       .slice(0, 5);
   }, [expenses]);
 
-  // Progress bar fill %, capped at 100 so it never overflows visually.
+  
   const budgetPercent = budget > 0 ? Math.min((totalSpent / budget) * 100, 100) : 0;
   const progressClass =
     budgetStatus === "Over budget" ? "over-budget" : budgetStatus === "Approaching budget" ? "approaching" : "";
@@ -193,7 +193,7 @@ const Home = () => {
         {user?.role === "admin" && <a href="/admin">Admin Dashboard</a>}
       </div>
 
-      {/* --- Budget section — stat grid + progress bar --- */}
+      {/* --- Budget section  --- */}
       <div className="card">
         <h2>Monthly Budget</h2>
         <form onSubmit={handleSetBudget}>
@@ -229,7 +229,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* --- User dashboard — stat grid for top numbers, lists below --- */}
+      {/* --- User dashboard --- */}
       <div className="card">
         <h2>Dashboard</h2>
 
@@ -297,7 +297,7 @@ const Home = () => {
         </form>
       </div>
 
-      {/* --- Filter/sort controls (dispatch to Redux, not local state) --- */}
+      {/* --- Filter/sort controls  --- */}
       <div className="card">
         <h2>Filter & Sort</h2>
         <input
@@ -335,7 +335,7 @@ const Home = () => {
         </select>
       </div>
 
-      {/* --- Expense list — uses filteredExpenses, NOT the raw expenses array --- */}
+      {/* --- Expense list  --- */}
       <div className="card">
         <h2>Expenses</h2>
         <table className="expense-table">
